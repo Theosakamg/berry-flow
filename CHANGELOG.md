@@ -9,9 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 - Initial changelog to track future releases
 - Contributor Covenant Code of Conduct reference
+- GitHub templates for bug reports, feature requests, and pull requests
 
 ### Pending
-- Project templates for issues and pull requests
 - Additional module documentation
 
 ## [0.1.0] - 2026-02-14
