@@ -51,11 +51,10 @@ jobs:
         for script in src/*.be; do
           echo "Checking $script..."
           
-          # Create temporary wrapper that loads stubs then the script
-          echo "load('.github/tasmota_stubs.be')" > /tmp/validate_wrapper.be
-          echo "load('$script')" >> /tmp/validate_wrapper.be
+          # Concatenate stubs and script into a single file for compilation
+          cat .github/tasmota_stubs.be "$script" > /tmp/validate_combined.be
           
-          ~/berry/berry -c /tmp/validate_wrapper.be
+          ~/berry/berry -c /tmp/validate_combined.be
           if [ $? -eq 0 ]; then
             echo "✓ $script: Syntax OK"
           else

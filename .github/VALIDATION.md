@@ -14,8 +14,8 @@ The validation workflow:
 2. **Validation Process**:
    - Clones the official Berry compiler (v1.1.0) from [berry-lang/berry](https://github.com/berry-lang/berry)
    - Compiles the Berry interpreter
-   - Loads Tasmota API stubs (`.github/tasmota_stubs.be`) to provide module definitions
-   - Uses Berry's `-c` flag to compile each script to bytecode, validating syntax
+   - Concatenates Tasmota API stubs (`.github/tasmota_stubs.be`) with each script for validation
+   - Uses Berry's `-c` flag to compile the combined file to bytecode, validating syntax
    - Reports any syntax errors as build failures
 
 3. **Caching**:
@@ -35,14 +35,9 @@ git clone --depth 1 --branch v1.1.0 https://github.com/berry-lang/berry.git
 cd berry
 make
 
-# Create validation wrapper (from your project root)
-cat > /tmp/validate_wrapper.be << 'EOF'
-load('.github/tasmota_stubs.be')
-load('src/water_counter.be')
-EOF
-
-# Validate the script
-./berry -c /tmp/validate_wrapper.be
+# Validate the script (from your project root)
+cat .github/tasmota_stubs.be src/water_counter.be > /tmp/validate_combined.be
+./berry -c /tmp/validate_combined.be
 ```
 
 For macOS:
@@ -52,13 +47,9 @@ git clone --depth 1 --branch v1.1.0 https://github.com/berry-lang/berry.git
 cd berry
 make
 
-# Create validation wrapper (from your project root)
-cat > /tmp/validate_wrapper.be << 'EOF'
-load('.github/tasmota_stubs.be')
-load('src/water_counter.be')
-EOF
-
-./berry -c /tmp/validate_wrapper.be
+# Validate the script (from your project root)
+cat .github/tasmota_stubs.be src/water_counter.be > /tmp/validate_combined.be
+./berry -c /tmp/validate_combined.be
 ```
 
 ## Tasmota API Stubs
@@ -69,7 +60,7 @@ Since Berry scripts use Tasmota-specific modules (`gpio`, `persist`, `mqtt`, `we
 - Allows syntax validation without requiring actual Tasmota runtime
 - Covers all Tasmota APIs used by `water_counter.be`
 
-The stubs are automatically loaded before each script validation.
+The stubs are concatenated with each script before compilation, making all Tasmota APIs available in the compilation context.
 
 ## Syntax Validation vs Runtime Testing
 
