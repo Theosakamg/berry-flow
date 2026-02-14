@@ -24,6 +24,8 @@ class Counter
     var _k_factor            # K-factor for YF-B6: Q[L/min] = f[Hz]/K (K=6.6)
     var _liter_acc           # Accumulated liters
     var _total_pulses        # Total pulses counted
+    var _hw_offset           # Logical offset to keep cumulative pulses monotonic
+    var _raw_counter_last    # Last raw hardware counter read
     var flow                 # Current flow rate (l/min) (public for display)
     var total_liter          # Total liters with offset (public for display)
     var total_liter_last     # Last total liters (for delta calculation if needed)
@@ -38,6 +40,8 @@ class Counter
         self._k_factor = 6.6  # YF-B6 K-factor from spec
         self._liter_acc = 0.0
         self._total_pulses = 0
+        self._hw_offset = 0
+        self._raw_counter_last = 0
         self.flow = 0.0
         self.total_liter = 0.0
         self.total_liter_last = 0.0
@@ -47,6 +51,7 @@ class Counter
         if current_counter != nil
             self.total_pulses_last = current_counter
             self._total_pulses = current_counter
+            self._raw_counter_last = current_counter
         end
     end
 
@@ -64,6 +69,7 @@ class Counter
         var prefix = "wc_" + str(self.__index)
 
         if persist.has(prefix + "_pulses")
+            result = true
             self._initial_offset = persist.find(prefix + "_offset")
             self._k_factor = persist.find(prefix + "_kfactor", 6.6)
             self._total_pulses = persist.find(prefix + "_pulses")
@@ -77,7 +83,31 @@ class Counter
                 ", K-Factor=" + string.format("%.2f", self._k_factor))
         end
 
+        self._sync_hw_alignment()
+
         return result
+    end
+
+    # Align logical counter with current hardware value (handles Tasmota rollback)
+    def _sync_hw_alignment()
+        var current_counter = gpio.counter_read(self.__index)
+
+        if current_counter == nil
+            return
+        end
+
+        self._raw_counter_last = current_counter
+
+        if self._total_pulses >= current_counter
+            self._hw_offset = self._total_pulses - current_counter
+        else
+            # Hardware counter is ahead of persisted value (unexpected). Adopt hardware to stay consistent.
+            self._hw_offset = 0
+            self.total_pulses_last = current_counter
+            self._total_pulses = current_counter
+            self.total_liter_last = self.total_liter
+            self._liter_acc = self.total_liter - self._initial_offset
+        end
     end
 
     # Save to persist
@@ -95,13 +125,26 @@ class Counter
     # Capture current counter value and compute delta
     def capture()
         var current_counter = gpio.counter_read(self.__index)
-        
+
         if current_counter != nil
-            self._delta = current_counter - self._total_pulses
+            if current_counter < self._raw_counter_last
+                var previous_total = self._total_pulses
+                self._hw_offset = previous_total - current_counter
+                log(string.format("Detected counter rollback on %s (raw %d -> %d), applying offset %d", 
+                    self.__name, self._raw_counter_last, current_counter, self._hw_offset), 2)
+            end
+
+            self._raw_counter_last = current_counter
+
+            var logical_counter = current_counter + self._hw_offset
+            self._delta = logical_counter - self._total_pulses
+
+            if self._delta < 0
+                self._delta = 0
+            end
+
             self.total_pulses_last = self._total_pulses
-            self._total_pulses = current_counter
-        # else
-        #     self._delta = 0
+            self._total_pulses = logical_counter
         end
     end
 
