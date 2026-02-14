@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Initial changelog to track future releases
 - Contributor Covenant Code of Conduct reference
 - GitHub templates for bug reports, feature requests, and pull requests
+- Hardware offset tracking (`_hw_offset`, `_raw_counter_last`) to maintain monotonic counter totals across device reboots
+- Configuration exposure in web UI: offsets, K-factors, debounce values
+- Configuration data in MQTT payloads for better visibility and debugging
+- Warning logs when negative counter deltas are detected
+- `get_offset()` getter method for Counter class
+
+### Changed
+- Persistence strategy: now saves immediately after each flow stop instead of only daily saves
+- Counter synchronization: aligns both pulse counts and liter values when hardware counter jumps ahead
+- Configuration fragment caching: built once and cached instead of recalculating on every MQTT publish
+
+### Fixed
+- Water counter totals no longer decrease after device reboots due to Tasmota Counter RAM persistence lag
+- Liter accumulation stays synchronized with pulse counts when hardware counter advances
 
 ### Pending
 - Additional module documentation
