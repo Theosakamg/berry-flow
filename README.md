@@ -1,6 +1,7 @@
 # Berry Flow - Water Counter Management for Tasmota
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Berry Script Validation](https://github.com/Theosakamg/berry-flow/actions/workflows/berry-validation.yml/badge.svg)](https://github.com/Theosakamg/berry-flow/actions/workflows/berry-validation.yml)
 
 A comprehensive water flow monitoring solution for Tasmota devices using the Berry scripting language. Designed for YF-B6 flow sensors, this project provides real-time flow rate monitoring, accumulated volume tracking, and MQTT integration for home automation systems.
 
