@@ -42,18 +42,15 @@ jobs:
         cd berry
         make
 
-    - name: Add Berry to PATH
-      run: echo "$HOME/berry" >> $GITHUB_PATH
-
     - name: Validate Berry scripts syntax
       run: |
         echo "Validating Berry scripts with Tasmota stubs..."
         find src -name "*.be" -type f | while read script; do
           echo "Checking $script..."
-          
+
           # Concatenate stubs and script into a single file for compilation
           cat .github/tasmota_stubs.be "$script" > /tmp/validate_combined.be
-          
+
           ~/berry/berry -c /tmp/validate_combined.be
           if [ $? -eq 0 ]; then
             echo "✓ $script: Syntax OK"
