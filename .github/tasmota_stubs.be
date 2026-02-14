@@ -25,12 +25,16 @@ mqtt.connected = def() return true end
 webserver = module("webserver")
 webserver.HTTP_GET = 0
 webserver.HTTP_POST = 1
+webserver.BUTTON_MAIN = 0
 webserver.on = def(path, handler, method) end
 webserver.has_arg = def(name) return false end
 webserver.arg = def(name) return "" end
 webserver.content_send = def(content) end
 webserver.content_start = def(status) end
 webserver.content_stop = def() end
+webserver.content_send_style = def() end
+webserver.content_button = def(button_type) end
+webserver.check_privileged_access = def() return true end
 webserver.content = def() return "" end
 
 # Tasmota module - Core system functions
@@ -39,7 +43,9 @@ tasmota.millis = def() return 0 end
 tasmota.add_driver = def(driver) end
 tasmota.cmd = def(command, get_result) return {} end
 tasmota.wifi = def() return {"mac": "00:00:00:00:00:00"} end
-tasmota.time_dump = def() return {"year": 2026, "month": 1, "day": 1, "hour": 0, "min": 0, "sec": 0} end
+tasmota.time_dump = def(timestamp) return {"year": 2026, "month": 1, "day": 1, "hour": 0, "min": 0, "sec": 0} end
+tasmota.rtc = def() return {"local": 0, "utc": 0} end
+tasmota.response_append = def(json_str) end
 
 # Global log function
 log = def(msg, level) end
