@@ -8,9 +8,10 @@ A comprehensive water flow monitoring solution for Tasmota devices using the Ber
 
 - **Dual Counter Support**: Monitor both global (hot + cold) and hot water separately
 - **Real-Time Flow Monitoring**: Calculate flow rates in L/min using YF-B6 sensor specifications (Q[L/min] = f[Hz] / 6.6)
-- **Persistent Storage**: Automatic saving and restoration of counter values across reboots
-- **MQTT Integration**: Publish flow data to MQTT for integration with Home Assistant and other platforms
-- **Web Interface**: Built-in configuration and monitoring interface
+- **Monotonic Counter Totals**: Hardware offset compensation ensures totals never decrease, even after device reboots or counter resets
+- **Smart Persistent Storage**: Automatic saving after each flow stop plus daily backups, with full restoration across reboots
+- **MQTT Integration**: Publish flow data and configuration to MQTT for integration with Home Assistant and other platforms
+- **Web Interface**: Built-in configuration and monitoring interface with real-time display of persisted settings
 - **Calibration Support**: Adjustable K-factor and offset calibration for accurate measurements
 - **Debounce Configuration**: Optimized pulse counting with configurable debounce timing
 
@@ -56,6 +57,8 @@ Configure:
 - **Offset**: Initial offset for total volume calibration
 - **Debounce**: Pulse counting debounce time in milliseconds (default: 3ms)
 
+The web interface displays both real-time measurements and persisted configuration values (offsets, K-factors, debounce) for easy verification.
+
 ### MQTT Topic
 
 Data is published to: `tele/<device-topic>/SENSOR`
@@ -77,10 +80,23 @@ Example payload:
       "Flow": 7.3
     },
     "LastUse": "2026-02-14T10:30:00",
-    "FlowDuration": 120
+    "FlowDuration": 120,
+    "Config": {
+      "DebounceMs": 3,
+      "Global": {
+        "Offset": 1234.56,
+        "KFactor": 6.6
+      },
+      "Hot": {
+        "Offset": 456.78,
+        "KFactor": 6.6
+      }
+    }
   }
 }
 ```
+
+**Note**: The `Config` section provides visibility into persisted configuration values for debugging and monitoring purposes.
 
 ## Technical Specifications
 
@@ -124,8 +140,14 @@ Or use the web interface reset buttons.
 
 The project implements an object-oriented design with two main classes:
 
-- **Counter**: Manages individual counter state, calculations, and persistence
-- **WaterCounter**: Orchestrates multiple counters, MQTT publishing, and web interface
+- **Counter**: Manages individual counter state, calculations, and persistence with hardware offset compensation (`_hw_offset`, `_raw_counter_last`) to maintain monotonic totals even when Tasmota counters reset
+- **WaterCounter**: Orchestrates multiple counters, MQTT publishing, web interface, and configuration caching for optimized performance
+
+### Persistence Strategy
+
+- **Immediate Save**: Data is persisted automatically after each flow stop to minimize data loss
+- **Daily Backup**: Additional save every 24 hours as a safety net
+- **Monotonic Guarantee**: Hardware offset tracking ensures counter totals never decrease across reboots
 
 See the [source code](src/water_counter.be) for detailed implementation.
 
@@ -137,9 +159,10 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for de
 
 This Berry implementation replaces the legacy Tasmota scripting version with improved:
 - Object-oriented design for better maintainability
-- Proper persistence handling
-- Enhanced MQTT integration
-- Modern web interface capabilities
+- Monotonic counter totals with hardware offset compensation
+- Smart persistence strategy (immediate save after flow stops)
+- Enhanced MQTT integration with configuration visibility
+- Modern web interface capabilities with persisted settings display
 
 ## License
 
