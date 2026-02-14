@@ -192,6 +192,10 @@ class Counter
         self.total_liter = self._initial_offset + self._liter_acc
     end
 
+    def get_offset()
+        return self._initial_offset
+    end
+
     # Get K-factor (public getter)
     def get_k_factor()
         return self._k_factor
@@ -227,6 +231,7 @@ class WaterCounter
     var _in_flowing         # Flag to force MQTT report on next update (e.g. after config change)
     var _topic               # MQTT topic for publishing results
     var _last_published_time  # Last time MQTT data was published (for rate limiting if needed)
+    var _config_fragment_cache  # Cached config JSON fragment
 
     # Initialize calculated values
     def _init()
@@ -295,6 +300,9 @@ class WaterCounter
         if !loaded
             self._save_persistent()
         end
+
+        # Build config fragment cache after loading
+        self._refresh_config_cache()
     end
 
     # Save persistent data
@@ -405,6 +413,22 @@ class WaterCounter
                 + 'SENSOR'
     end
 
+    def _refresh_config_cache()
+        var global = self._counters[0]
+        var hot = self._counters[1]
+
+        self._config_fragment_cache = string.format(
+            '"Config":{"DebounceMs":%d,'..
+            '"Global":{"Offset":%.2f,"KFactor":%.2f},'..
+            '"Hot":{"Offset":%.2f,"KFactor":%.2f}}',
+            self._debounce_ms,
+            global.get_offset(),
+            global.get_k_factor(),
+            hot.get_offset(),
+            hot.get_k_factor()
+        )
+    end
+
     def _mqtt_build_payload_full(time, glb_cnt, hot_cnt, glb_total, glb_flow, hot_total, hot_flow, cold_total, cold_flow)
         return string.format(
             '{"Time":"%s",'..
@@ -412,7 +436,8 @@ class WaterCounter
             '"WaterCounter":{'..
                 '"Global":{"Total":%.2f,"Flow":%.3f},'..
                 '"Hot":{"Total":%.2f,"Flow":%.3f},'..
-                '"Cold":{"Total":%.2f,"Flow":%.3f}'..
+                '"Cold":{"Total":%.2f,"Flow":%.3f},'..
+                '%s'..
             '}}',
             time,
             glb_cnt,
@@ -422,7 +447,8 @@ class WaterCounter
             hot_total,
             hot_flow,
             cold_total,
-            cold_flow
+            cold_flow,
+            self._config_fragment_cache
         )
     end
 
@@ -600,11 +626,13 @@ class WaterCounter
             ',"WaterCounter":{'
             '"Global":{"Total":%.2f,"Flow":%.3f},'
             '"Hot":{"Total":%.2f,"Flow":%.3f},'
-            '"Cold":{"Total":%.2f,"Flow":%.3f}'
+            '"Cold":{"Total":%.2f,"Flow":%.3f},'
+            '%s'..
             '},"FlowUnit":"L/min","TotalUnit":"L"',
             global.total_liter, global.flow,
             hot.total_liter, hot.flow,
-            self._total_liter_cold, self._flow_cold
+            self._total_liter_cold, self._flow_cold,
+            self._config_fragment_cache
         )
 
         # Append to Tasmota's telemetry JSON
@@ -632,17 +660,27 @@ class WaterCounter
         var msg = string.format(
             "{s}Global Total{m}%.2f l{e}"..
             "{s}Global Flow{m}%.3f l/min{e}"..
+            "{s}Global Offset{m}%.2f l{e}"..
+            "{s}Global K-Factor{m}%.2f{e}"..
             "{s}Hot Total{m}%.2f l{e}"..
             "{s}Hot Flow{m}%.3f l/min{e}"..
+            "{s}Hot Offset{m}%.2f l{e}"..
+            "{s}Hot K-Factor{m}%.2f{e}"..
             "{s}Cold Total{m}%.2f l{e}"..
             "{s}Cold Flow{m}%.3f l/min{e}"..
+            "{s}Debounce{m}%d ms{e}"..
             "{s}Last Use{m}%s{e}",
             global.total_liter,
             global.flow,
+            global.get_offset(),
+            global.get_k_factor(),
             hot.total_liter,
             hot.flow,
+            hot.get_offset(),
+            hot.get_k_factor(),
             self._total_liter_cold,
             self._flow_cold,
+            self._debounce_ms,
             self._last_use_datetime)
 
         webserver.content_send(msg)
@@ -723,16 +761,19 @@ class WaterCounter
                 var value = real(webserver.arg("offset1"))
                 self._counters[0]._set_offset(value)
                 self._save_persistent()
+                self._refresh_config_cache()
                 msg = string.format("Global offset set to %.2f l", self._counters[0]._initial_offset)
             elif action == "set_offset2"
                 var value = real(webserver.arg("offset2"))
                 self._counters[1]._set_offset(value)
                 self._save_persistent()
+                self._refresh_config_cache()
                 msg = string.format("Hot offset set to %.2f l", self._counters[1]._initial_offset)
             elif action == "set_kfactor1"
                 var value = real(webserver.arg("kfactor1"))
                 if self._counters[0].set_k_factor(value)
                     self._save_persistent()
+                    self._refresh_config_cache()
                     msg = string.format("Global K-Factor set to %.2f", value)
                 else
                     msg = string.format("Error: Invalid PPL value %.2f (must be > 0)", value)
@@ -741,6 +782,7 @@ class WaterCounter
                 var value = real(webserver.arg("kfactor2"))
                 if self._counters[1].set_k_factor(value)
                     self._save_persistent()
+                    self._refresh_config_cache()
                     msg = string.format("Hot K-Factor set to %.2f", value)
                 else
                     msg = string.format("Error: Invalid K-Factor value %.2f (must be > 0)", value)
@@ -751,6 +793,7 @@ class WaterCounter
                     self._debounce_ms = value
                     self._apply_debounce()
                     self._save_persistent()
+                    self._refresh_config_cache()
                     msg = string.format("Counter Debounce set to %d ms", value)
                 else
                     msg = string.format("Error: Debounce must be 0-10 ms (got %d)", value)
