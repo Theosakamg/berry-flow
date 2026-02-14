@@ -45,7 +45,7 @@ jobs:
     - name: Validate Berry scripts syntax
       run: |
         echo "Validating Berry scripts with Tasmota stubs..."
-        find src -name "*.be" -type f | while read script; do
+        while read script; do
           echo "Checking $script..."
 
           # Concatenate stubs and script into a single file for compilation
@@ -58,7 +58,7 @@ jobs:
             echo "✗ $script: Syntax error detected"
             exit 1
           fi
-        done
+        done < <(find src -name "*.be" -type f)
 
     - name: Run Berry syntax summary
       if: success()
