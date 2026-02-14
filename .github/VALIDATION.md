@@ -14,6 +14,7 @@ The validation workflow:
 2. **Validation Process**:
    - Clones the official Berry compiler (v1.1.0) from [berry-lang/berry](https://github.com/berry-lang/berry)
    - Compiles the Berry interpreter
+   - Loads Tasmota API stubs (`.github/tasmota_stubs.be`) to provide module definitions
    - Uses Berry's `-c` flag to compile each script to bytecode, validating syntax
    - Reports any syntax errors as build failures
 
@@ -34,8 +35,14 @@ git clone --depth 1 --branch v1.1.0 https://github.com/berry-lang/berry.git
 cd berry
 make
 
-# Validate a script
-./berry -c path/to/your/script.be
+# Create validation wrapper (from your project root)
+cat > /tmp/validate_wrapper.be << 'EOF'
+load('.github/tasmota_stubs.be')
+load('src/water_counter.be')
+EOF
+
+# Validate the script
+./berry -c /tmp/validate_wrapper.be
 ```
 
 For macOS:
@@ -44,15 +51,32 @@ brew install readline
 git clone --depth 1 --branch v1.1.0 https://github.com/berry-lang/berry.git
 cd berry
 make
-./berry -c path/to/your/script.be
+
+# Create validation wrapper (from your project root)
+cat > /tmp/validate_wrapper.be << 'EOF'
+load('.github/tasmota_stubs.be')
+load('src/water_counter.be')
+EOF
+
+./berry -c /tmp/validate_wrapper.be
 ```
+
+## Tasmota API Stubs
+
+Since Berry scripts use Tasmota-specific modules (`gpio`, `persist`, `mqtt`, `webserver`, `tasmota`), the validation workflow uses API stubs defined in `.github/tasmota_stubs.be`. These stubs provide:
+
+- Module and function signatures without implementation
+- Allows syntax validation without requiring actual Tasmota runtime
+- Covers all Tasmota APIs used by `water_counter.be`
+
+The stubs are automatically loaded before each script validation.
 
 ## Syntax Validation vs Runtime Testing
 
 **Important**: This workflow only validates **syntax correctness**. It does not:
 - Execute the scripts
 - Test runtime behavior
-- Verify Tasmota-specific APIs
+- Verify Tasmota-specific API correctness (only stubs are used)
 - Check for logic errors
 
 For complete testing, deploy scripts to an actual Tasmota device.

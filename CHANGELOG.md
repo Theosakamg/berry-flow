@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Warning logs when negative counter deltas are detected
 - `get_offset()` getter method for Counter class
 - GitHub Actions workflow for automatic Berry script syntax validation
+- Tasmota API stubs (`.github/tasmota_stubs.be`) for syntax validation without runtime
 - CI/CD badge in README showing validation status
 - Validation documentation (`.github/VALIDATION.md`)
 
