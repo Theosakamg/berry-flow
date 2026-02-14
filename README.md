@@ -141,8 +141,6 @@ This Berry implementation replaces the legacy Tasmota scripting version with imp
 - Enhanced MQTT integration
 - Modern web interface capabilities
 
-The original Tasmota script reference is available in `.tmp/SripteWaterCounter-org.tas`.
-
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
