@@ -48,7 +48,7 @@ jobs:
     - name: Validate Berry scripts syntax
       run: |
         echo "Validating Berry scripts with Tasmota stubs..."
-        for script in src/*.be; do
+        find src -name "*.be" -type f | while read script; do
           echo "Checking $script..."
           
           # Concatenate stubs and script into a single file for compilation

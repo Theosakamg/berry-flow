@@ -9,11 +9,15 @@ The validation workflow:
 1. **Triggers on**:
    - Push to `master` or `main` branches
    - Pull requests targeting `master` or `main`
-   - Only when `.be` files in `src/` are modified or the workflow itself changes
+   - Only when changes are made to:
+     - `.be` files in `src/` (including subdirectories)
+     - `.github/workflows/berry-validation.yml` (the workflow itself)
+     - `.github/tasmota_stubs.be` (API stubs)
 
 2. **Validation Process**:
    - Clones the official Berry compiler (v1.1.0) from [berry-lang/berry](https://github.com/berry-lang/berry)
    - Compiles the Berry interpreter
+   - Recursively finds all `.be` files in `src/` directory and subdirectories
    - Concatenates Tasmota API stubs (`.github/tasmota_stubs.be`) with each script for validation
    - Uses Berry's `-c` flag to compile the combined file to bytecode, validating syntax
    - Reports any syntax errors as build failures
@@ -58,9 +62,16 @@ Since Berry scripts use Tasmota-specific modules (`gpio`, `persist`, `mqtt`, `we
 
 - Module and function signatures without implementation
 - Allows syntax validation without requiring actual Tasmota runtime
-- Covers all Tasmota APIs used by `water_counter.be`
+- Covers the Tasmota APIs currently used by scripts in this repository:
+  - **gpio**: `counter_read()`, `counter_set()`
+  - **persist**: `has()`, `find()`, `setmember()`, `save()`
+  - **mqtt**: `publish()`, `connected()`
+  - **webserver**: HTTP constants, request handlers, content rendering, security checks
+  - **tasmota**: `millis()`, `add_driver()`, `cmd()`, `wifi()`, `time_dump()`, `rtc()`, `response_append()`
 
 The stubs are concatenated with each script before compilation, making all Tasmota APIs available in the compilation context.
+
+**Note**: If new Tasmota APIs are used in the code, the stubs file must be updated accordingly.
 
 ## Syntax Validation vs Runtime Testing
 
