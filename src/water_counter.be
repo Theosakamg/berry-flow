@@ -101,12 +101,18 @@ class Counter
         if self._total_pulses >= current_counter
             self._hw_offset = self._total_pulses - current_counter
         else
-            # Hardware counter is ahead of persisted value (unexpected). Adopt hardware to stay consistent.
+            # Hardware counter is ahead of persisted value (unexpected). Adopt hardware and align liters.
+            var delta_pulses = current_counter - self._total_pulses
+            if delta_pulses > 0
+                var delta_liters = delta_pulses / (self._k_factor * 60.0)
+                self.total_liter_last = self.total_liter
+                self._liter_acc += delta_liters
+                self.total_liter = self._initial_offset + self._liter_acc
+            end
+
             self._hw_offset = 0
             self.total_pulses_last = current_counter
             self._total_pulses = current_counter
-            self.total_liter_last = self.total_liter
-            self._liter_acc = self.total_liter - self._initial_offset
         end
     end
 
@@ -140,6 +146,8 @@ class Counter
             self._delta = logical_counter - self._total_pulses
 
             if self._delta < 0
+                log(string.format("Warning: negative delta on %s (logical=%d, tracked=%d)",
+                    self.__name, logical_counter, self._total_pulses))
                 self._delta = 0
             end
 
