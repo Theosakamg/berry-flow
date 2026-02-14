@@ -1,0 +1,69 @@
+name: Berry Script Validation
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'src/**/*.be'
+      - '.github/workflows/berry-validation.yml'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'src/**/*.be'
+      - '.github/workflows/berry-validation.yml'
+
+jobs:
+  validate-syntax:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libreadline-dev git
+    
+    - name: Cache Berry compiler
+      id: cache-berry
+      uses: actions/cache@v4
+      with:
+        path: ~/berry
+        key: berry-compiler-${{ runner.os }}-v1.1.0
+    
+    - name: Clone and build Berry compiler
+      if: steps.cache-berry.outputs.cache-hit != 'true'
+      run: |
+        cd ~
+        git clone --depth 1 --branch v1.1.0 https://github.com/berry-lang/berry.git
+        cd berry
+        make
+    
+    - name: Add Berry to PATH
+      run: echo "$HOME/berry" >> $GITHUB_PATH
+    
+    - name: Validate Berry scripts syntax
+      run: |
+        echo "Validating Berry scripts..."
+        for script in src/*.be; do
+          echo "Checking $script..."
+          ~/berry/berry -c "$script"
+          if [ $? -eq 0 ]; then
+            echo "✓ $script: Syntax OK"
+          else
+            echo "✗ $script: Syntax error detected"
+            exit 1
+          fi
+        done
+    
+    - name: Run Berry syntax summary
+      if: success()
+      run: |
+        echo "=========================================="
+        echo "All Berry scripts validated successfully!"
+        echo "=========================================="
+        find src -name "*.be" -type f | while read file; do
+          lines=$(wc -l < "$file")
+          echo "  ✓ $file ($lines lines)"
+        done

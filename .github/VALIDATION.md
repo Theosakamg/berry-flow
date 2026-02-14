@@ -1,0 +1,70 @@
+# Berry Script Validation
+
+This repository uses GitHub Actions to automatically validate all Berry scripts for syntax correctness.
+
+## How It Works
+
+The validation workflow:
+
+1. **Triggers on**:
+   - Push to `master` or `main` branches
+   - Pull requests targeting `master` or `main`
+   - Only when `.be` files in `src/` are modified or the workflow itself changes
+
+2. **Validation Process**:
+   - Clones the official Berry compiler (v1.1.0) from [berry-lang/berry](https://github.com/berry-lang/berry)
+   - Compiles the Berry interpreter
+   - Uses Berry's `-c` flag to compile each script to bytecode, validating syntax
+   - Reports any syntax errors as build failures
+
+3. **Caching**:
+   - The Berry compiler is cached between runs to speed up validation
+   - Cache key: `berry-compiler-{OS}-v1.1.0`
+
+## Running Locally
+
+To validate Berry scripts on your local machine:
+
+```bash
+# Install dependencies (Ubuntu/Debian)
+sudo apt-get install build-essential libreadline-dev git
+
+# Clone and build Berry
+git clone --depth 1 --branch v1.1.0 https://github.com/berry-lang/berry.git
+cd berry
+make
+
+# Validate a script
+./berry -c path/to/your/script.be
+```
+
+For macOS:
+```bash
+brew install readline
+git clone --depth 1 --branch v1.1.0 https://github.com/berry-lang/berry.git
+cd berry
+make
+./berry -c path/to/your/script.be
+```
+
+## Syntax Validation vs Runtime Testing
+
+**Important**: This workflow only validates **syntax correctness**. It does not:
+- Execute the scripts
+- Test runtime behavior
+- Verify Tasmota-specific APIs
+- Check for logic errors
+
+For complete testing, deploy scripts to an actual Tasmota device.
+
+## Workflow Status
+
+[![Berry Script Validation](https://github.com/Theosakamg/berry-flow/actions/workflows/berry-validation.yml/badge.svg)](https://github.com/Theosakamg/berry-flow/actions/workflows/berry-validation.yml)
+
+Green badge = All scripts have valid syntax ✓
+
+## References
+
+- [Berry Language Documentation](https://berry.readthedocs.io/)
+- [Berry GitHub Repository](https://github.com/berry-lang/berry)
+- [Berry EBNF Grammar](https://github.com/berry-lang/berry/blob/master/tools/grammar/berry.ebnf)
