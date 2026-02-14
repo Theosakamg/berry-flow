@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - README updated with monotonic counter features, Config in MQTT payload, and persistence strategy details
 - Validation workflow uses process substitution for proper error propagation
 - Workflow validation matches trigger patterns (recursive src/**/*.be coverage)
+- Documentation clarified that Berry scripting requires ESP32 (ESP8266 not supported)
 
 ### Fixed
 - Water counter totals no longer decrease after device reboots due to Tasmota Counter RAM persistence lag

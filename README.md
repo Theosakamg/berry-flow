@@ -5,6 +5,8 @@
 
 A comprehensive water flow monitoring solution for Tasmota devices using the Berry scripting language. Designed for YF-B6 flow sensors, this project provides real-time flow rate monitoring, accumulated volume tracking, and MQTT integration for home automation systems.
 
+> **Note**: This project requires an **ESP32-based** Tasmota device with Berry scripting support. ESP8266 devices are not compatible.
+
 ## Features
 
 - **Dual Counter Support**: Monitor both global (hot + cold) and hot water separately
@@ -18,9 +20,11 @@ A comprehensive water flow monitoring solution for Tasmota devices using the Ber
 
 ## Hardware Requirements
 
-- Tasmota-compatible device (ESP8266/ESP32)
+- **Tasmota-compatible ESP32 device** (Berry scripting requires ESP32 - not supported on ESP8266)
 - YF-B6 water flow sensor(s) - up to 2 sensors
 - Tasmota firmware with Berry support (v12.0.0+)
+
+> **⚠️ Important**: Berry scripting is only available on ESP32 devices. ESP8266 devices do not have sufficient resources to run Berry scripts.
 
 ## Installation
 
