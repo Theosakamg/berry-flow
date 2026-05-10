@@ -560,8 +560,22 @@ class WaterCounter
         end
 
         # Calculate cold water (Global - Hot)
-        self._total_liter_cold = self._counters[0].total_liter - self._counters[1].total_liter
-        self._flow_cold = self._counters[0].flow - self._counters[1].flow
+        var total_liter_cold = self._counters[0].total_liter - self._counters[1].total_liter
+
+        if total_liter_cold < 0
+            log(string.format("Warning: calculated cold total is negative (Global=%.2f, Hot=%.2f), check offsets",
+                self._counters[0].total_liter, self._counters[1].total_liter))
+        else
+            self._total_liter_cold = total_liter_cold
+
+            var flow_cold = self._counters[0].flow - self._counters[1].flow
+            if flow_cold < 0
+                log(string.format("Warning: calculated cold flow is negative (Global=%.3f, Hot=%.3f), check offsets",
+                    self._counters[0].flow, self._counters[1].flow))
+            else
+                self._flow_cold = self._counters[0].flow - self._counters[1].flow
+            end
+        end
 
         self._report_stat()
     end
