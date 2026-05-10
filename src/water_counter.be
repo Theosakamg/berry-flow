@@ -164,7 +164,7 @@ class Counter
     def update()
         # Calculate flow rate: convert delta (pulses/100ms) to L/min
         # f[Hz] = delta * 10, Q[L/min] = f / K = (delta * 10) / K
-        self.flow = (self._delta * 10.0) / self._k_factor
+        self.flow = (self._delta * 1.0) / self._k_factor
 
         # Update accumulated liters: 1 liter = K * 60 pulses
         var delta_liters = self._delta / (self._k_factor * 60.0)
@@ -453,23 +453,23 @@ class WaterCounter
     end
 
     def _mqtt_publish(time, glb_cnt, hot_cnt, glb_total, glb_flow, hot_total, hot_flow, cold_total, cold_flow)
-        if ((self._last_published_time + 500) > tasmota.millis() || glb_flow == 0.0 || hot_flow == 0.0)
+        # if ((self._last_published_time + 500) > tasmota.millis() || glb_flow == 0.0 || hot_flow == 0.0)
 
-            var _sensor_json = self._mqtt_build_payload_full(
-                time,
-                glb_cnt,
-                hot_cnt,
-                glb_total,
-                glb_flow,
-                hot_total,
-                hot_flow,
-                cold_total,
-                cold_flow
-            )
+        var _sensor_json = self._mqtt_build_payload_full(
+            time,
+            glb_cnt,
+            hot_cnt,
+            glb_total,
+            glb_flow,
+            hot_total,
+            hot_flow,
+            cold_total,
+            cold_flow
+        )
 
-            mqtt.publish(self._topic, _sensor_json)
-            self._last_published_time = tasmota.millis()
-        end
+        mqtt.publish(self._topic, _sensor_json)
+        self._last_published_time = tasmota.millis()
+        # end
     end
 
     # def mqtt_data(topic, idx, payload_s, payload_b)
@@ -549,7 +549,8 @@ class WaterCounter
     end
 
     # Called every 100ms (like original Tasmota script for better flow precision)
-    def every_100ms()
+    # def every_100ms()
+    def _refresh_counter()
         # Capture and update counters every 100ms (sync with Tasmota sampling)
         for counter : self._counters
             counter.capture()
@@ -606,12 +607,15 @@ class WaterCounter
             # Persist totals immediately after each use to guard against unexpected reboots
             self._save_persistent()
         end
+
         self._was_flowing = is_flowing
 
         # Save persistent variables once a day (86400000 ms = 24 hours)
         if (now - self._last_save) >= 86400000
             self._save_persistent()
         end
+
+        self._refresh_counter()
     end
 
     # Called before restart to save persistent data
